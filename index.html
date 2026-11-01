@@ -97,7 +97,7 @@
   .item.marcado .caixa { background: var(--verde); }
   .item.marcado .caixa::after { content: "✓"; }
   .item.indisponivel {
-    background: #eeeeec; border-style: dashed; cursor: not-allowed; opacity: .75;
+    background: #eeeeec; border-style: dashed; cursor: not-allowed; opacity: .45;
   }
   .item.indisponivel .caixa { border-color: #aaa; background: #ddd; }
   .item.indisponivel .caixa::after { content: "✓"; color: #888; }
@@ -261,7 +261,7 @@
 <script>
 /* ============ CONFIGURAÇÃO ============
    Cole abaixo o endereço gerado pelo Apps Script (termina com /exec). */
-const API_URL = "https://script.google.com/macros/s/AKfycbzhwyC3lZ45R2hU2Wgk4bp-0637RZgfSVWlzXjG93u7h8SGHGxh-MJ_KcFWqQnJNNEtvQ/exec";
+const API_URL = "COLE_AQUI_A_URL_DO_APPS_SCRIPT";
 /* ====================================== */
 
 const estado = { itens: [], escolhidos: new Set(), busca: "", soDisponiveis: false, enviando: false };
@@ -303,6 +303,9 @@ function desenhar() {
     if (estado.soDisponiveis && i.escolhido) return false;
     return !termo || semAcento(i.descricao).includes(termo);
   });
+
+  // Itens já escolhidos vão para o final (mantém a ordem original dentro de cada grupo)
+  visiveis.sort((a, b) => Number(a.escolhido) - Number(b.escolhido));
 
   if (!visiveis.length) {
     lista.innerHTML = '<div class="vazio">Nenhum item encontrado.</div>';
