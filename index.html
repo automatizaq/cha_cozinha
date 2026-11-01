@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chá de Cozinha • Joscelyn e Eduardo</title>
+<style>
+  :root {
+    --verde: #34664f;
+    --verde-escuro: #264b3a;
+    --verde-claro: #e6f0ea;
+    --fundo: #faf8f4;
+    --texto: #1f2a24;
+    --cinza: #6b726d;
+    --borda: #d5dbd7;
+    --erro: #b3261e;
+  }
+  * { box-sizing: border-box; }
+  html { font-size: 20px; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--fundo);
+    color: var(--texto);
+    line-height: 1.45;
+    padding-bottom: 110px;
+  }
+  .container { max-width: 760px; margin: 0 auto; padding: 0 16px; }
+
+  header {
+    background: var(--verde);
+    color: #fff;
+    text-align: center;
+    padding: 32px 16px 28px;
+  }
+  header .emoji { font-size: 2.4rem; }
+  header h1 { margin: 6px 0 4px; font-size: 1.7rem; line-height: 1.2; }
+  header p { margin: 0; font-size: 1.05rem; opacity: .95; }
+
+  .passos {
+    background: #fff;
+    border: 2px solid var(--borda);
+    border-radius: 16px;
+    padding: 18px 20px;
+    margin: 20px 0;
+  }
+  .passos h2 { margin: 0 0 10px; font-size: 1.2rem; }
+  .passos ol { margin: 0; padding-left: 1.3rem; }
+  .passos li { margin: 6px 0; }
+
+  .progresso { margin: 0 0 18px; }
+  .progresso .texto { font-size: .95rem; color: var(--cinza); margin-bottom: 6px; }
+  .barra { height: 14px; background: #e4e8e5; border-radius: 99px; overflow: hidden; }
+  .barra > div { height: 100%; width: 0; background: var(--verde); transition: width .5s; }
+
+  .ferramentas { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+  .ferramentas input[type=search] { width: 100%; }
+  .filtro { display: flex; align-items: center; gap: 10px; font-size: 1rem; cursor: pointer; }
+  .filtro input { width: 26px; height: 26px; accent-color: var(--verde); }
+
+  input[type=text], input[type=search], textarea {
+    font: inherit;
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid var(--borda);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--texto);
+  }
+  input:focus, textarea:focus, button:focus-visible, .item:focus-within {
+    outline: 4px solid #9cc7b0;
+    outline-offset: 1px;
+  }
+
+  .lista { display: flex; flex-direction: column; gap: 12px; }
+  .item {
+    display: flex; align-items: center; gap: 14px;
+    background: #fff;
+    border: 2px solid var(--borda);
+    border-radius: 16px;
+    padding: 16px;
+    cursor: pointer;
+    user-select: none;
+    transition: background .15s, border-color .15s;
+  }
+  .item input { position: absolute; opacity: 0; pointer-events: none; }
+  .caixa {
+    flex: 0 0 38px; height: 38px;
+    border: 3px solid var(--verde);
+    border-radius: 10px;
+    display: grid; place-items: center;
+    font-size: 1.5rem; color: #fff; background: #fff;
+  }
+  .item .nome { font-weight: 600; font-size: 1.1rem; }
+  .item .qtd { color: var(--cinza); font-size: .92rem; margin-top: 2px; }
+  .item.marcado { background: var(--verde-claro); border-color: var(--verde); }
+  .item.marcado .caixa { background: var(--verde); }
+  .item.marcado .caixa::after { content: "✓"; }
+  .item.indisponivel {
+    background: #eeeeec; border-style: dashed; cursor: not-allowed; opacity: .75;
+  }
+  .item.indisponivel .caixa { border-color: #aaa; background: #ddd; }
+  .item.indisponivel .caixa::after { content: "✓"; color: #888; }
+  .item .etiqueta {
+    margin-left: auto; font-size: .85rem; font-weight: 600;
+    background: #ddd; color: #555; padding: 4px 10px; border-radius: 99px; white-space: nowrap;
+  }
+
+  .vazio, .carregando, .erro-box { text-align: center; padding: 30px 10px; color: var(--cinza); }
+  .erro-box { color: var(--erro); }
+
+  .formulario {
+    background: #fff;
+    border: 2px solid var(--borda);
+    border-radius: 16px;
+    padding: 20px;
+    margin: 26px 0;
+  }
+  .formulario h2 { margin: 0 0 12px; font-size: 1.2rem; }
+  .formulario label { display: block; font-weight: 600; margin: 14px 0 6px; }
+  .formulario label small { font-weight: 400; color: var(--cinza); }
+  .aviso-erro { color: var(--erro); font-weight: 600; margin-top: 10px; display: none; }
+
+  button {
+    font: inherit; font-weight: 700;
+    border: none; border-radius: 14px;
+    padding: 16px 22px;
+    cursor: pointer;
+    background: var(--verde); color: #fff;
+  }
+  button:hover { background: var(--verde-escuro); }
+  button:disabled { background: #9aa8a0; cursor: not-allowed; }
+  button.secundario { background: #fff; color: var(--verde); border: 2px solid var(--verde); }
+  button.secundario:hover { background: var(--verde-claro); }
+  .grande { width: 100%; font-size: 1.15rem; padding: 18px; }
+
+  .barra-fixa {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: #fff; border-top: 2px solid var(--borda);
+    padding: 12px 16px;
+    z-index: 10;
+  }
+  .barra-fixa .container { display: flex; align-items: center; gap: 14px; padding: 0; }
+  .barra-fixa .contador { flex: 1; font-weight: 700; font-size: 1.05rem; }
+  .barra-fixa .contador span { display: block; font-weight: 400; font-size: .85rem; color: var(--cinza); }
+
+  .modal-fundo {
+    position: fixed; inset: 0; background: rgba(0,0,0,.55);
+    display: none; align-items: center; justify-content: center;
+    padding: 16px; z-index: 20;
+  }
+  .modal-fundo.aberto { display: flex; }
+  .modal {
+    background: #fff; border-radius: 18px; padding: 24px;
+    max-width: 520px; width: 100%; max-height: 90vh; overflow: auto;
+  }
+  .modal h2 { margin-top: 0; }
+  .modal ul { padding-left: 1.2rem; }
+  .modal .botoes { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+
+  .sucesso { text-align: center; padding: 40px 10px; display: none; }
+  .sucesso .emoji { font-size: 3.5rem; }
+  .sucesso h2 { font-size: 1.6rem; margin: 10px 0; }
+  .sucesso ul { text-align: left; background: #fff; border: 2px solid var(--borda); border-radius: 16px; padding: 16px 16px 16px 36px; }
+
+  footer { text-align: center; color: var(--cinza); font-size: .9rem; padding: 10px 16px 30px; }
+
+  @media (min-width: 600px) {
+    .ferramentas { flex-direction: row; align-items: center; }
+    .ferramentas input[type=search] { flex: 1; }
+    .modal .botoes { flex-direction: row-reverse; }
+    .modal .botoes button { flex: 1; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="emoji">🍽️</div>
+  <h1>Chá de Cozinha<br>Joscelyn &amp; Eduardo</h1>
+  <p>Escolha com carinho o presente que você vai dar</p>
+</header>
+
+<main class="container">
+
+  <div id="tela-lista">
+    <section class="passos">
+      <h2>Como funciona</h2>
+      <ol>
+        <li><strong>Toque</strong> nos itens que você quer presentear.</li>
+        <li><strong>Escreva seu nome</strong> no final da página.</li>
+        <li>Toque em <strong>“Enviar minha escolha”</strong>.</li>
+      </ol>
+    </section>
+
+    <div class="progresso" id="progresso" hidden>
+      <div class="texto" id="progresso-texto"></div>
+      <div class="barra"><div id="progresso-barra"></div></div>
+    </div>
+
+    <div class="ferramentas">
+      <input type="search" id="busca" placeholder="🔍 Procurar um item (ex.: faca)" aria-label="Procurar um item">
+      <label class="filtro">
+        <input type="checkbox" id="so-disponiveis">
+        Mostrar só os itens disponíveis
+      </label>
+    </div>
+
+    <div id="lista" class="lista" aria-live="polite">
+      <div class="carregando">Carregando a lista…</div>
+    </div>
+
+    <section class="formulario" id="formulario" hidden>
+      <h2>Seus dados</h2>
+      <label for="nome">Seu nome completo</label>
+      <input type="text" id="nome" autocomplete="name" placeholder="Ex.: Maria da Silva" maxlength="80">
+
+      <label for="mensagem">Recado para os noivos <small>(opcional)</small></label>
+      <textarea id="mensagem" rows="3" maxlength="500" placeholder="Escreva uma mensagem carinhosa…"></textarea>
+
+      <div class="aviso-erro" id="aviso-erro"></div>
+      <div style="margin-top:18px">
+        <button class="grande" id="btn-revisar">Enviar minha escolha</button>
+      </div>
+    </section>
+  </div>
+
+  <section class="sucesso" id="tela-sucesso">
+    <div class="emoji">🎉</div>
+    <h2 id="sucesso-titulo">Muito obrigado!</h2>
+    <p>Sua escolha foi enviada com sucesso.<br>Joscelyn e Eduardo ficarão muito felizes!</p>
+    <p><strong>Os itens que você escolheu:</strong></p>
+    <ul id="sucesso-itens"></ul>
+    <p style="color:var(--cinza)">Pode fechar esta página. Se quiser, pode escolher mais itens.</p>
+    <button class="secundario grande" id="btn-mais">Escolher mais itens</button>
+  </section>
+
+</main>
+
+<footer>Feito com carinho 💚</footer>
+
+<div class="barra-fixa" id="barra-fixa" hidden>
+  <div class="container">
+    <div class="contador" id="contador">Nenhum item escolhido<span>Toque nos itens acima</span></div>
+    <button id="btn-ir">Continuar</button>
+  </div>
+</div>
+
+<div class="modal-fundo" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+  <div class="modal">
+    <h2 id="modal-titulo">Confira sua escolha</h2>
+    <p><strong id="modal-nome"></strong>, você vai presentear:</p>
+    <ul id="modal-itens"></ul>
+    <div class="botoes">
+      <button id="btn-confirmar">Sim, enviar</button>
+      <button class="secundario" id="btn-voltar">Voltar e corrigir</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============ CONFIGURAÇÃO ============
+   Cole abaixo o endereço gerado pelo Apps Script (termina com /exec). */
+const API_URL = "https://script.google.com/macros/s/AKfycbzhwyC3lZ45R2hU2Wgk4bp-0637RZgfSVWlzXjG93u7h8SGHGxh-MJ_KcFWqQnJNNEtvQ/exec";
+/* ====================================== */
+
+const estado = { itens: [], escolhidos: new Set(), busca: "", soDisponiveis: false, enviando: false };
+const $ = (id) => document.getElementById(id);
+
+/* "Colher (Quantidade sugerida: 2 unidades)" -> { titulo, qtd } */
+function separar(descricao) {
+  const m = descricao.match(/^(.*?)\s*\(Quantidade sugerida:\s*([^)]*)\)\s*$/i);
+  return m ? { titulo: m[1], qtd: m[2] } : { titulo: descricao, qtd: "" };
+}
+function semAcento(t) { return t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); }
+
+async function carregar() {
+  $("lista").innerHTML = '<div class="carregando">Carregando a lista…</div>';
+  try {
+    const r = await fetch(API_URL + "?t=" + Date.now());
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.erro || "Erro");
+    estado.itens = d.itens.map((i) => ({ ...i, ...separar(i.descricao) }));
+    // remove da seleção quem já foi levado por outra pessoa
+    estado.itens.forEach((i) => { if (i.escolhido) estado.escolhidos.delete(i.id); });
+    $("formulario").hidden = false;
+    $("barra-fixa").hidden = false;
+    desenhar();
+  } catch (e) {
+    $("lista").innerHTML =
+      '<div class="erro-box"><p>Não foi possível carregar a lista agora.</p>' +
+      '<button id="btn-tentar">Tentar de novo</button></div>';
+    $("btn-tentar").onclick = carregar;
+  }
+}
+
+function desenhar() {
+  const lista = $("lista");
+  lista.innerHTML = "";
+  const termo = semAcento(estado.busca.trim());
+
+  const visiveis = estado.itens.filter((i) => {
+    if (estado.soDisponiveis && i.escolhido) return false;
+    return !termo || semAcento(i.descricao).includes(termo);
+  });
+
+  if (!visiveis.length) {
+    lista.innerHTML = '<div class="vazio">Nenhum item encontrado.</div>';
+  }
+
+  visiveis.forEach((i) => {
+    const marcado = estado.escolhidos.has(i.id);
+    const el = document.createElement("label");
+    el.className = "item" + (i.escolhido ? " indisponivel" : marcado ? " marcado" : "");
+
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = marcado;
+    cb.disabled = i.escolhido;
+    cb.onchange = () => {
+      cb.checked ? estado.escolhidos.add(i.id) : estado.escolhidos.delete(i.id);
+      el.classList.toggle("marcado", cb.checked);
+      atualizarContador();
+    };
+
+    const caixa = document.createElement("span"); caixa.className = "caixa";
+    const texto = document.createElement("div");
+    const nome = document.createElement("div"); nome.className = "nome"; nome.textContent = i.titulo;
+    texto.appendChild(nome);
+    if (i.qtd) {
+      const q = document.createElement("div"); q.className = "qtd"; q.textContent = "Quantidade sugerida: " + i.qtd;
+      texto.appendChild(q);
+    }
+
+    el.append(cb, caixa, texto);
+    if (i.escolhido) {
+      const et = document.createElement("span"); et.className = "etiqueta"; et.textContent = "Já escolhido";
+      el.appendChild(et);
+    }
+    lista.appendChild(el);
+  });
+
+  atualizarProgresso();
+  atualizarContador();
+}
+
+function atualizarProgresso() {
+  const total = estado.itens.length;
+  if (!total) return;
+  const ja = estado.itens.filter((i) => i.escolhido).length;
+  $("progresso").hidden = false;
+  $("progresso-texto").textContent = ja + " de " + total + " itens já foram escolhidos";
+  $("progresso-barra").style.width = Math.round((ja / total) * 100) + "%";
+}
+
+function atualizarContador() {
+  const n = estado.escolhidos.size;
+  $("contador").innerHTML = n === 0
+    ? 'Nenhum item escolhido<span>Toque nos itens acima</span>'
+    : n + (n === 1 ? " item escolhido" : " itens escolhidos") + "<span>Depois, escreva seu nome</span>";
+  $("btn-ir").textContent = n === 0 ? "Continuar" : "Continuar ▸";
+}
+
+function mostrarErro(msg) {
+  const a = $("aviso-erro");
+  a.textContent = msg; a.style.display = "block";
+}
+
+function revisar() {
+  $("aviso-erro").style.display = "none";
+  const nome = $("nome").value.trim();
+  if (estado.escolhidos.size === 0) {
+    mostrarErro("Escolha pelo menos um item na lista acima.");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    return;
+  }
+  if (nome.length < 3) {
+    mostrarErro("Por favor, escreva seu nome.");
+    $("nome").focus();
+    return;
+  }
+  $("modal-nome").textContent = nome;
+  const ul = $("modal-itens"); ul.innerHTML = "";
+  estado.itens.filter((i) => estado.escolhidos.has(i.id)).forEach((i) => {
+    const li = document.createElement("li");
+    li.textContent = i.titulo + (i.qtd ? " (" + i.qtd + ")" : "");
+    ul.appendChild(li);
+  });
+  $("modal").classList.add("aberto");
+}
+
+async function enviar() {
+  if (estado.enviando) return;
+  estado.enviando = true;
+  const btn = $("btn-confirmar");
+  btn.disabled = true; btn.textContent = "Enviando…";
+
+  const nome = $("nome").value.trim();
+  const itensEnviados = estado.itens.filter((i) => estado.escolhidos.has(i.id));
+
+  try {
+    const r = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        nome,
+        mensagem: $("mensagem").value.trim(),
+        itens: itensEnviados.map((i) => i.id)
+      })
+    });
+    const d = await r.json();
+
+    if (d.ok) {
+      $("modal").classList.remove("aberto");
+      $("sucesso-titulo").textContent = "Muito obrigado, " + nome.split(" ")[0] + "!";
+      const ul = $("sucesso-itens"); ul.innerHTML = "";
+      itensEnviados.forEach((i) => {
+        const li = document.createElement("li");
+        li.textContent = i.titulo + (i.qtd ? " (" + i.qtd + ")" : "");
+        ul.appendChild(li);
+      });
+      estado.escolhidos.clear();
+      $("tela-lista").style.display = "none";
+      $("barra-fixa").hidden = true;
+      $("tela-sucesso").style.display = "block";
+      window.scrollTo({ top: 0 });
+    } else if (d.ocupados && d.ocupados.length) {
+      $("modal").classList.remove("aberto");
+      const nomes = d.ocupados.map((o) => separar(o.descricao).titulo).join(", ");
+      alert("Que pena! Alguém acabou de escolher: " + nomes + ".\n\nJá tiramos da sua lista. Confira e envie de novo.");
+      d.ocupados.forEach((o) => estado.escolhidos.delete(o.id));
+      await carregar();
+    } else {
+      throw new Error(d.erro || "Erro");
+    }
+  } catch (e) {
+    $("modal").classList.remove("aberto");
+    mostrarErro("Não conseguimos enviar agora. Verifique a internet e tente de novo.");
+  } finally {
+    estado.enviando = false;
+    btn.disabled = false; btn.textContent = "Sim, enviar";
+  }
+}
+
+/* Eventos */
+$("busca").addEventListener("input", (e) => { estado.busca = e.target.value; desenhar(); });
+$("so-disponiveis").addEventListener("change", (e) => { estado.soDisponiveis = e.target.checked; desenhar(); });
+$("btn-ir").onclick = () => $("formulario").scrollIntoView({ behavior: "smooth" });
+$("btn-revisar").onclick = revisar;
+$("btn-voltar").onclick = () => $("modal").classList.remove("aberto");
+$("btn-confirmar").onclick = enviar;
+$("btn-mais").onclick = () => {
+  $("tela-sucesso").style.display = "none";
+  $("tela-lista").style.display = "block";
+  $("barra-fixa").hidden = false;
+  carregar();
+};
+
+carregar();
+</script>
+</body>
+</html>
